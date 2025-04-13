@@ -1,0 +1,233 @@
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- Переменные для Песочницы ---
+    let sandboxData = []; // Массив объектов {x, y}
+    const regressionPlotDiv = document.getElementById('regression-plot');
+    const residualPlotDiv = document.getElementById('residual-plot');
+    const equationEl = document.getElementById('equation');
+    const rSquaredEl = document.getElementById('r-squared');
+    const mseEl = document.getElementById('mse');
+    const generateBtn = document.getElementById('generate-data');
+    const clearBtn = document.getElementById('clear-data');
+
+    // --- Функции для OLS (Простая Линейная Регрессия) ---
+    function calculateSLR(data) {
+        if (data.length < 2) {
+            return { b0: NaN, b1: NaN, rSquared: NaN, mse: NaN, residuals: [] };
+        }
+
+        const n = data.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+
+        data.forEach(p => {
+            sumX += p.x;
+            sumY += p.y;
+            sumXY += p.x * p.y;
+            sumX2 += p.x * p.x;
+            sumY2 += p.y * p.y;
+        });
+
+        const meanX = sumX / n;
+        const meanY = sumY / n;
+
+        // Расчет b1 (slope)
+        const numerator = sumXY - n * meanX * meanY;
+        const denominator = sumX2 - n * meanX * meanX;
+
+        // Проверка на вертикальную линию (или одну точку по X)
+        if (Math.abs(denominator) < 1e-10) {
+             console.warn("Denominator close to zero, potential vertical line.");
+             return { b0: NaN, b1: NaN, rSquared: NaN, mse: NaN, residuals: [] };
+        }
+        const b1 = numerator / denominator;
+
+        // Расчет b0 (intercept)
+        const b0 = meanY - b1 * meanX;
+
+        // Расчет метрик (R^2, MSE) и остатков
+        let ssr = 0; // Sum of squares regression (explained)
+        let sse = 0; // Sum of squares error (residuals)
+        let sst = 0; // Sum of squares total
+        const residuals = [];
+        const fitted = [];
+
+        data.forEach(p => {
+            const y_hat = b0 + b1 * p.x;
+            const residual = p.y - y_hat;
+            residuals.push({x: p.x, y: residual}); // Сохраняем остатки
+            fitted.push({x: p.x, y: y_hat});     // Сохраняем предсказанные значения
+            sse += residual * residual;
+            sst += (p.y - meanY) * (p.y - meanY);
+        });
+
+        // Проверка на горизонтальную линию (или одну точку по Y)
+        const rSquared = (Math.abs(sst) < 1e-10) ? NaN : 1 - (sse / sst);
+        const mse = sse / n;
+
+        return { b0, b1, rSquared, mse, residuals, fitted };
+    }
+
+    // --- Функции для отрисовки (используя Plotly.js) ---
+    function plotDataAndRegression(data, model) {
+        const traceData = {
+            x: data.map(p => p.x),
+            y: data.map(p => p.y),
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Данные'
+        };
+
+        const layout = {
+            title: 'Данные и Линия Регрессии',
+            xaxis: { title: 'X' },
+            yaxis: { title: 'Y' },
+            hovermode: 'closest', // Для интерактивности при добавлении точек
+             // Добавляем диапазон, чтобы точки не прилипали к краям
+            xaxis: { range: [Math.min(...traceData.x) - 1, Math.max(...traceData.x) + 1] },
+            yaxis: { range: [Math.min(...traceData.y) - 1, Math.max(...traceData.y) + 1] }
+        };
+
+        const traces = [traceData];
+
+        // Добавляем линию регрессии, если модель посчитана
+        if (model && !isNaN(model.b0) && !isNaN(model.b1)) {
+            const xLine = [Math.min(...traceData.x), Math.max(...traceData.x)];
+            // Если все X одинаковы, берем чуть шире диапазон для линии
+             if (xLine[0] === xLine[1]) {
+                 xLine[0] -= 1;
+                 xLine[1] += 1;
+             }
+
+            const yLine = xLine.map(x => model.b0 + model.b1 * x);
+
+            const traceLine = {
+                x: xLine,
+                y: yLine,
+                mode: 'lines',
+                type: 'scatter',
+                name: 'Линия регрессии',
+                line: { color: 'red' }
+            };
+            traces.push(traceLine);
+        }
+
+        Plotly.newPlot(regressionPlotDiv, traces, layout);
+
+        // --- Добавляем обработчик клика для добавления точек ---
+        regressionPlotDiv.on('plotly_click', function(eventData){
+            if (eventData.points.length > 0) {
+                const point = eventData.points[0];
+                // Получаем координаты клика относительно осей графика
+                const newX = point.xaxis.p2c(point.x); // pixel-to-coordinate
+                const newY = point.yaxis.p2c(point.y);
+
+                 // В Plotly v2+ eventData.points[0].x/y уже в координатах данных
+                // const newX = eventData.points[0].x;
+                // const newY = eventData.points[0].y;
+
+                addPoint(newX, newY); // Добавляем точку и перерисовываем
+            }
+        });
+    }
+
+     function plotResiduals(residuals, fitted) {
+         if (!residuals || residuals.length === 0) {
+             Plotly.purge(residualPlotDiv); // Очищаем график, если нет данных
+             return;
+         }
+
+         const traceResiduals = {
+             // Используем предсказанные значения по оси X
+             x: fitted.map(p => p.y),
+             y: residuals.map(p => p.y),
+             mode: 'markers',
+             type: 'scatter',
+             name: 'Остатки'
+         };
+
+         // Горизонтальная линия на уровне 0
+         const traceZeroLine = {
+             x: [Math.min(...traceResiduals.x), Math.max(...traceResiduals.x)],
+             y: [0, 0],
+             mode: 'lines',
+             type: 'scatter',
+             name: 'y=0',
+             line: { color: 'grey', dash: 'dash' }
+         };
+
+         const layout = {
+             title: 'График Остатков (Остатки vs Предсказанные Y)',
+             xaxis: { title: 'Предсказанные значения (ŷ)' },
+             yaxis: { title: 'Остатки (y - ŷ)' },
+             hovermode: 'closest',
+             showlegend: false // Можно скрыть легенду для простоты
+         };
+
+         Plotly.newPlot(residualPlotDiv, [traceResiduals, traceZeroLine], layout);
+     }
+
+
+    // --- Обновление UI ---
+    function updateSandbox() {
+        const model = calculateSLR(sandboxData);
+
+        // Обновляем текст результатов
+        if (!isNaN(model.b0) && !isNaN(model.b1)) {
+            equationEl.textContent = `y = ${model.b1.toFixed(3)} x + ${model.b0.toFixed(3)}`;
+            rSquaredEl.textContent = isNaN(model.rSquared) ? 'N/A' : model.rSquared.toFixed(3);
+            mseEl.textContent = isNaN(model.mse) ? 'N/A' : model.mse.toFixed(3);
+        } else {
+            equationEl.textContent = 'y = ? x + ?';
+            rSquaredEl.textContent = '?';
+            mseEl.textContent = '?';
+        }
+
+        // Перерисовываем графики
+        plotDataAndRegression(sandboxData, model);
+        plotResiduals(model.residuals, model.fitted);
+    }
+
+    // --- Функции управления данными ---
+    function generateSampleData() {
+        sandboxData = [];
+        const numPoints = 15;
+        const trueB1 = 1.5;
+        const trueB0 = 5;
+        const noiseLevel = 5; // Уровень шума
+
+        for (let i = 0; i < numPoints; i++) {
+            const x = Math.random() * 10; // X от 0 до 10
+            const y = trueB0 + trueB1 * x + (Math.random() - 0.5) * 2 * noiseLevel; // y = b0 + b1*x + шум
+            sandboxData.push({ x: x, y: y });
+        }
+        updateSandbox();
+    }
+
+    function clearSandboxData() {
+        sandboxData = [];
+        updateSandbox();
+        Plotly.purge(residualPlotDiv); // Очищаем график остатков тоже
+    }
+
+     function addPoint(x, y) {
+         // Округляем для удобства
+         sandboxData.push({ x: Math.round(x*10)/10, y: Math.round(y*10)/10 });
+         updateSandbox();
+     }
+
+    // --- Инициализация и обработчики событий ---
+    generateBtn.addEventListener('click', generateSampleData);
+    clearBtn.addEventListener('click', clearSandboxData);
+
+    // Инициализация песочницы при загрузке
+    generateSampleData(); // Начинаем с какими-то данными
+
+    // --- Логика для Квизов (Пример) ---
+    // document.querySelectorAll('.quiz button').forEach(button => {
+    //     button.addEventListener('click', function() {
+    //         // Логика проверки ответа
+    //         alert("Проверка ответа (нужно реализовать)");
+    //     });
+    // });
+
+}); // Конец DOMContentLoaded
