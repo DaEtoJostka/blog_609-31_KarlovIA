@@ -1,14 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ article.title }}</title>
-</head>
-<body>
+{% extends "base_layout.html" %}
+
+{% block title %}{{ article.title }}{% endblock title %}
+
+{% block content %}
     <div class="article-detail">
         <h1>{{ article.title }}</h1>
         <p>{{ article.body }}</p>
         <small>{{ article.date }}</small>
     </div>
-</body>
-</html> 
+{% endblock content %} 
