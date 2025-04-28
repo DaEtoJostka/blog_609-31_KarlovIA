@@ -4,6 +4,9 @@
 
 {% block content %}
     <div class="article-detail">
+        {% if article.thumbnail %}
+            <img src="{{ article.thumbnail.url }}" alt="{{ article.title }} thumbnail">
+        {% endif %}
         <h1>{{ article.title }}</h1>
         <p>{{ article.body }}</p>
         <small>{{ article.date }}</small>

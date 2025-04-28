@@ -16,6 +16,21 @@
             <ul>
                 <li><a href="{% url 'articles:list' %}">Articles</a></li>
                 <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                {% if user.is_authenticated %}
+                <li>
+                    <form class="form" action="/accounts/logout/" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Logout</button>
+                    </form>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{% url 'login' %}">Login</a>
+                </li>
+                <li>
+                    <a href="{% url 'signup' %}">Signup</a>
+                </li>
+                {% endif %}
             </ul>
         </nav>
         <style>
@@ -58,6 +73,21 @@
             nav ul li a:hover {
                 background-color: #3498db;
                 color: white;
+            }
+            
+            nav ul li form button {
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: background-color 0.2s ease;
+            }
+            
+            nav ul li form button:hover {
+                background-color: #c0392b;
             }
         </style>
     </header>
