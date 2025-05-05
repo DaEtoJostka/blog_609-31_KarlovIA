@@ -22,7 +22,7 @@ def login_view(request):
             if 'next' in request.POST:
                 return redirect(request.POST.get('next'))
             else:
-                return redirect('articles:list') # Redirect to articles list by default
+                return redirect('homepage') # Redirect to homepage by default
     else:
         form = AuthenticationForm()
     return render(request, 'accounts/login.html', {'form': form})

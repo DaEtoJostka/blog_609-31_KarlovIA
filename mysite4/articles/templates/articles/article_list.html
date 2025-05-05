@@ -4,6 +4,9 @@
 
 {% block content %}
     <h1>Article List</h1>
+    {% if user.is_authenticated %}
+      <p><a href="{% url 'articles:create' %}" class="btn btn-primary">Create article</a></p>
+    {% endif %}
     <div class="articles">
         {% for article in articles %}
             <div class="article__item">

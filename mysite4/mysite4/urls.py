@@ -18,11 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from articles import views as article_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('articles/', include('articles.urls')),
-    path('accounts/', include('accounts.urls'))
+    path('accounts/', include('accounts.urls')),
+    path('', article_views.article_list, name='homepage'),
 ]
 
 # Add media serving during development
