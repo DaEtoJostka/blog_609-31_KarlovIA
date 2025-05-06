@@ -6,4 +6,4 @@ class ArticlesConfig(AppConfig):
     name = 'articles'
 
     def ready(self):
-        import articles.signals # Import signals when the app is ready
+        import articles.signals
