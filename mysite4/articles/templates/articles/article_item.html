@@ -5,10 +5,17 @@
 {% block content %}
     <div class="article-detail">
         {% if article.thumbnail %}
-            <img src="{{ article.thumbnail.url }}" alt="{{ article.title }} thumbnail">
+            <img src="{{ article.thumbnail.url }}" alt="{{ article.title }} thumbnail" style="max-width: 300px; height: auto;">
         {% endif %}
         <h1>{{ article.title }}</h1>
+        <p>Author: {{ article.author.username|default:"Unknown" }}</p>
         <p>{{ article.body }}</p>
         <small>{{ article.date }}</small>
+        {% if user.is_authenticated and user == article.author %}
+            <div style="margin-top: 20px;">
+                <a href="{% url 'articles:update' slug=article.slug %}" class="btn btn-warning">Edit Article</a>
+                <a href="{% url 'articles:delete' slug=article.slug %}" class="btn btn-danger">Delete Article</a>
+            </div>
+        {% endif %}
     </div>
 {% endblock content %} 

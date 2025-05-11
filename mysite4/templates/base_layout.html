@@ -17,18 +17,19 @@
                 <li><a href="{% url 'homepage' %}">Articles</a></li>
                 <li><a href="{% url 'admin:index' %}">Admin</a></li>
                 {% if user.is_authenticated %}
+                <li><a href="{% url 'articles:create' %}">Create Article</a></li>
                 <li>
                     <form class="form" action="{% url 'accounts:logout' %}" method="post">
                         {% csrf_token %}
-                        <button type="submit">Logout</button>
+                        <button type="submit">Logout ({{ user.username }})</button>
                     </form>
                 </li>
                 {% else %}
                 <li>
-                    <a href="{% url 'accounts:login' %}">Login</a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary">Login</a>
                 </li>
                 <li>
-                    <a href="{% url 'accounts:signup' %}">Signup</a>
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-primary">Signup</a>
                 </li>
                 {% endif %}
             </ul>

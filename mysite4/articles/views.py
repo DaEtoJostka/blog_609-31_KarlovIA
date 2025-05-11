@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Article
 from django.contrib.auth.decorators import login_required
 from . import forms # Import forms
+from django.http import HttpResponse
 
 # Create your views here.
 def article_list(request):
@@ -15,15 +16,36 @@ def article_item(request, slug):
 @login_required(login_url='/accounts/login/')
 def article_create(request):
     if request.method == 'POST':
-        form = forms.CreateArticle(request.POST, request.FILES) # Added request.FILES
+        form = forms.ArticleForm(request.POST, request.FILES)
         if form.is_valid():
-            # Save article to DB but don't commit yet
             instance = form.save(commit=False)
-            # Assign the author
             instance.author = request.user
-            # Now save to DB
             instance.save()
-            return redirect('homepage') # Redirect to homepage
-    else: # If GET request
-        form = forms.CreateArticle()
-    return render(request, 'articles/article_create.html', {'form': form})
+            return redirect('articles:detail', slug=instance.slug)
+    else:
+        form = forms.ArticleForm()
+    return render(request, 'articles/article_form.html', {'form': form})
+
+@login_required(login_url='/accounts/login/')
+def article_update(request, slug):
+    article = get_object_or_404(Article, slug=slug)
+    if article.author != request.user:
+        return HttpResponse('You are not authorized to edit this article.', status=403)
+    if request.method == 'POST':
+        form = forms.ArticleForm(request.POST, request.FILES, instance=article)
+        if form.is_valid():
+            form.save()
+            return redirect('articles:detail', slug=article.slug)
+    else:
+        form = forms.ArticleForm(instance=article)
+    return render(request, 'articles/article_form.html', {'form': form, 'article': article})
+
+@login_required(login_url='/accounts/login/')
+def article_delete(request, slug):
+    article = get_object_or_404(Article, slug=slug)
+    if article.author != request.user:
+        return HttpResponse('You are not authorized to delete this article.', status=403)
+    if request.method == 'POST':
+        article.delete()
+        return redirect('articles:list')
+    return render(request, 'articles/article_confirm_delete.html', {'article': article})
