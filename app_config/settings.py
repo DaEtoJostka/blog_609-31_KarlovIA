@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-v%6_#x6ox)l)!$0lbg^91upqeo)e*jh!m(jt=hm+49uj4g(0ai'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['your-username.pythonanywhere.com'] # IMPORTANT: Change this to your actual PythonAnywhere domain
 
 
 # Application definition
@@ -119,6 +119,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/' # Path relative to new BASE_DIR
+STATIC_ROOT = BASE_DIR / 'staticfiles' # For PythonAnywhere
 
 STATICFILES_DIRS = [
     BASE_DIR / "static", # Path relative to new BASE_DIR
