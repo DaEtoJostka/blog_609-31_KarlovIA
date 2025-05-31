@@ -78,11 +78,8 @@ WSGI_APPLICATION = 'app_config.wsgi.application' # Updated WSGI_APPLICATION
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'DaEtoJostka$default',
-        'USER': 'DaEtoJostka',
-        'PASSWORD': 'myblog1111',
-        'HOST': 'DaEtoJostka.mysql.pythonanywhere-services.com',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3', # Path relative to new BASE_DIR
     }
 }
 
@@ -129,7 +126,6 @@ STATICFILES_DIRS = [
 
 # Media files (Uploaded by users)
 MEDIA_URL = '/media/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_ROOT = BASE_DIR / 'media' # Path relative to new BASE_DIR
 
 # Default primary key field type
