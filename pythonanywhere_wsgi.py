@@ -2,7 +2,7 @@ import os
 import sys
 
 # Add your project directory to the sys.path
-path = '/home/your-username/your-project-name'  # IMPORTANT: Change this to your actual project path on PythonAnywhere
+path = '/home/DaEtoJostka/blog_609-31_KarlovIA'  # IMPORTANT: Change this to your actual project path on PythonAnywhere
 if path not in sys.path:
     sys.path.insert(0, path)
 
